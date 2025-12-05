@@ -1,9 +1,9 @@
-Streamlit
-yfinance
+streamlit
 pandas
 numpy
+yfinance
+matplotlib
 plotly
 scipy
 scikit-learn
-matplotlib
-Skfolio
+skfolio

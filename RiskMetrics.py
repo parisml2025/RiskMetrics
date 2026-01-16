@@ -616,7 +616,7 @@ with main_tab[1]:
     if "Sector Allocation" in selected_outputs:
         st.markdown("<h3 class='section-title'>Sector Allocation</h3>", unsafe_allow_html=True)
         filtered_asset_info_df = asset_info_df.drop(columns=[benchmark_ticker], errors='ignore')
-        sector_counts = filtered_asset_info_df.loc["Sector"].value_counts()
+        sector_counts = filtered_asset_info_df["Sector"].value_counts()
         fig = px.pie(names=sector_counts.index, values=sector_counts.values, title="Sector Allocation")
         st.plotly_chart(fig)
         st.markdown("<hr style='border:1px solid gray'>", unsafe_allow_html=True)

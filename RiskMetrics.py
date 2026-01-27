@@ -530,8 +530,8 @@ main_tab = st.tabs(["Portfolio Comparison",
 
 # Get fundatmental info of Tickers
 #@st.cache_data(ttl=3600)
-def get_ticker_info(tickers_and_benchmarks):
-    """Récupère les informations fondamentales des tickers depuis Yahoo Finance et les met en cache, avec formatage du Market Cap."""
+def get_ticker_info(tickers):
+    """Récupère les informations fondamentales des tickers depuis Yahoo Finance."""
     
     def format_market_cap(value):
         """Formate Market Cap avec séparateurs de milliers et ajoute M, B, T si nécessaire."""
@@ -548,7 +548,7 @@ def get_ticker_info(tickers_and_benchmarks):
             return f"${value:,.0f}"
 
     info_dict = {}
-    for ticker in selected_tickers:
+    for ticker in tickers:
         try:
             info = yf.Ticker(ticker).info
             market_cap = info.get("marketCap", "N/A")
@@ -557,11 +557,16 @@ def get_ticker_info(tickers_and_benchmarks):
             info_dict[ticker] = {
                 "Sector": info.get("sector", "N/A"),
                 "Industry": info.get("industry", "N/A"),
-                "Market Cap": formatted_market_cap,  # Format appliqué ici
+                "Market Cap": formatted_market_cap,
                 "Country": info.get("country", "N/A")
             }
-        except:
-            continue
+        except Exception as e:
+            info_dict[ticker] = {
+                "Sector": "Error",
+                "Industry": "Error",
+                "Market Cap": "Error",
+                "Country": "Error"
+            }
 
     return info_dict
 
@@ -613,19 +618,40 @@ with main_tab[1]:
     # ---------------------------------------
     # 📌 3. Sector allocation
     # ---------------------------------------
-if "Sector Allocation" in selected_outputs:
-    st.markdown("<h3 class='section-title'>Sector Allocation</h3>", unsafe_allow_html=True)
-    filtered_asset_info_df = asset_info_df.drop(columns=[benchmark_ticker], errors='ignore')
-
-    # Vérifier si la colonne "Sector" existe et que le DataFrame n'est pas vide
-    if "Sector" in filtered_asset_info_df.columns and not filtered_asset_info_df.empty:
-        sector_counts = filtered_asset_info_df["Sector"].value_counts()
-        fig = px.pie(names=sector_counts.index, values=sector_counts.values, title="Sector Allocation")
-        st.plotly_chart(fig)
-    else:
-        st.warning("La colonne 'Sector' est introuvable ou le DataFrame est vide.")
-    
-    st.markdown("<hr style='border:1px solid gray'>", unsafe_allow_html=True)
+    # ---------------------------------------
+    # 📌 3. Sector allocation
+    # ---------------------------------------
+    if "Sector Allocation" in selected_outputs:
+        st.markdown("<h3 class='section-title'>Sector Allocation</h3>", unsafe_allow_html=True)
+        
+        # Appeler la fonction seulement pour les tickers sélectionnés (pas le benchmark)
+        info_dict = get_ticker_info(selected_tickers)
+        
+        # Créer le DataFrame correctement
+        asset_info_df = pd.DataFrame.from_dict(info_dict, orient='index')
+        
+        # Vérifier si le DataFrame n'est pas vide et contient la colonne "Sector"
+        if not asset_info_df.empty and "Sector" in asset_info_df.columns:
+            # Filtrer les secteurs "N/A" ou "Error"
+            sector_counts = asset_info_df["Sector"].value_counts()
+            sector_counts = sector_counts[sector_counts.index != "N/A"]
+            sector_counts = sector_counts[sector_counts.index != "Error"]
+            
+            if not sector_counts.empty:
+                fig = px.pie(
+                    names=sector_counts.index, 
+                    values=sector_counts.values, 
+                    title="Sector Allocation",
+                    color_discrete_sequence=px.colors.qualitative.Set3
+                )
+                fig.update_traces(textposition='inside', textinfo='percent+label')
+                st.plotly_chart(fig)
+            else:
+                st.warning("Aucune information de secteur disponible pour les tickers sélectionnés.")
+        else:
+            st.warning("La colonne 'Sector' est introuvable ou le DataFrame est vide.")
+        
+        st.markdown("<hr style='border:1px solid gray'>", unsafe_allow_html=True)
 
     # ---------------------------------------
     # 📌 4. Beta vs Benchmark

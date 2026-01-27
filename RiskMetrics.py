@@ -613,13 +613,19 @@ with main_tab[1]:
     # ---------------------------------------
     # 📌 3. Sector allocation
     # ---------------------------------------
-    if "Sector Allocation" in selected_outputs:
-        st.markdown("<h3 class='section-title'>Sector Allocation</h3>", unsafe_allow_html=True)
-        filtered_asset_info_df = asset_info_df.drop(columns=[benchmark_ticker], errors='ignore')
+if "Sector Allocation" in selected_outputs:
+    st.markdown("<h3 class='section-title'>Sector Allocation</h3>", unsafe_allow_html=True)
+    filtered_asset_info_df = asset_info_df.drop(columns=[benchmark_ticker], errors='ignore')
+
+    # Vérifier si la colonne "Sector" existe et que le DataFrame n'est pas vide
+    if "Sector" in filtered_asset_info_df.columns and not filtered_asset_info_df.empty:
         sector_counts = filtered_asset_info_df["Sector"].value_counts()
         fig = px.pie(names=sector_counts.index, values=sector_counts.values, title="Sector Allocation")
         st.plotly_chart(fig)
-        st.markdown("<hr style='border:1px solid gray'>", unsafe_allow_html=True)
+    else:
+        st.warning("La colonne 'Sector' est introuvable ou le DataFrame est vide.")
+    
+    st.markdown("<hr style='border:1px solid gray'>", unsafe_allow_html=True)
 
     # ---------------------------------------
     # 📌 4. Beta vs Benchmark
